@@ -17,15 +17,15 @@
         <p>{{ transaction.timestamp }}: {{ transaction.sender.name }} -> {{ transaction.receiver.name }} ({{ transaction.subject }})</p>
     {% endfor %}
     {% if current_user.id == 1 %}
-        <form method="POST" action="{{ url_for('redistribute') }}">
+        <form method="POST" action="{{ url_for('routes.redistribute') }}">
             <button type="submit">Redistribute Coins</button>
         </form>
     {% endif %}
-    <form method="POST" action="{{ url_for('exit') }}">
+    <form method="POST" action="{{ url_for('routes.exit') }}">
         <button type="submit">Exit System</button>
     </form>
-    <a href="{{ url_for('profile') }}">Profile</a>
-    <a href="{{ url_for('transact') }}">Transact</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
+    <a href="{{ url_for('routes.profile') }}">Profile</a>
+    <a href="{{ url_for('routes.transact') }}">Transact</a>
+    <a href="{{ url_for('routes.logout') }}">Logout</a>
 </body>
 </html>

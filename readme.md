@@ -1,2 +1,31 @@
 python3 -m venv env 
 source env/bin/activate 
+
+Just run app.py
+or
+export FLASK_APP=app.py      
+export FLASK_ENV=development
+flask run
+---------
+
+
+To run your Flask application, follow these steps:
+
+Install the necessary packages: If you haven’t done so already, you’ll need to install Flask, Flask-SQLAlchemy, and Flask-Login. You can do this using pip, the Python package installer. Open your terminal and type:
+pip install flask flask_sqlalchemy flask_login
+
+Set the FLASK_APP environment variable: This tells Flask where your application is located. If your main application file is app.py, you can set the variable like this:
+export FLASK_APP=app.py
+
+On Windows, use set instead of export:
+
+set FLASK_APP=app.py
+
+Run the application: You can now run your application using the flask run command:
+flask run
+
+This will start a development web server, and Flask will give you the address where you can access it (usually http://127.0.0.1:5000/).
+
+Remember to run these commands in the directory where your app.py file is located. Also, these instructions assume that you’re using a virtual environment. If you’re not, you might need to use pip3 instead of pip, and python3 -m flask run instead of flask run.
+
+Please note that this will run the app in development mode, which is not suitable for deploying in a production environment. If you’re planning to deploy your app, you’ll need to use a production WSGI server like Gunicorn or uWSGI. You’ll also need to set the FLASK_ENV environment variable to production and set up logging so that you can see any errors or warnings that occur. If you need help with this, please let me know! I’m here to help. 😊
