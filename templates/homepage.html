@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Homepage</title>
+</head>
+<body>
+    <h1>Welcome, {{ current_user.name }}!</h1>
+    <h2>Total Coins: {{ total_activity }}</h2>
+    <h2>Central Bank: {{ cb_activity }}</h2>
+    <h2>Your Coins: {{ current_user.coins }}</h2>
+    <h2>Participant Balances</h2>
+    {% for participant in participants %}
+        <p>{{ participant.name }}: {{ participant.coins }}</p>
+    {% endfor %}
+    <h2>Transaction Log</h2>
+    {% for transaction in transactions %}
+        <p>{{ transaction.timestamp }}: {{ transaction.sender.name }} -> {{ transaction.receiver.name }} ({{ transaction.subject }})</p>
+    {% endfor %}
+    {% if current_user.id == 1 %}
+        <form method="POST" action="{{ url_for('redistribute') }}">
+            <button type="submit">Redistribute Coins</button>
+        </form>
+    {% endif %}
+    <form method="POST" action="{{ url_for('exit') }}">
+        <button type="submit">Exit System</button>
+    </form>
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <a href="{{ url_for('transact') }}">Transact</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>
