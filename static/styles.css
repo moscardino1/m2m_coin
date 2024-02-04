@@ -1,0 +1,203 @@
+/* Global Styles */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f7f7f7;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header Styles */
+.header {
+  background-color: #2c3e50;
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 48px;
+  margin: 0;
+}
+
+/* Main Section Styles */
+.main-section {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  margin-top: 20px;
+}
+
+.main-section h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.main-section p {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Button Styles */
+.button {
+  background-color: #3498db;
+  color: #fff;
+  padding: 15px 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 18px;
+  margin-right: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #2980b9;
+}
+
+/* Footer Styles */
+.footer {
+  background-color: #34495e;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+
+.footer p {
+  margin: 0;
+}
+
+/* Transaction Log Styles */
+.transaction-log {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.transaction-log h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.transaction-log ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.transaction-log li {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.transaction-log li:last-child {
+  border-bottom: none;
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+
+table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Search Input Styles */
+#transaction-search {
+  margin-bottom: 20px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+
+
+.navigation-panel {
+  display: none;
+}
+
+.navigation-panel.show {
+  display: block;
+}
+ 
+
+
+
+
+   /* Additional Styles */
+   #title {
+    text-align: center;
+}
+
+#website-sections {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#website-sections a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #333;
+}
+
+#user-welcome {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#user-welcome img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+
+
+
+
+.button button[type="submit"] {
+  background-color: #007bff;
+  color: #fff;
+  padding: 15px 0;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+}
+
+.button button[type="submit"]:hover {
+  background-color: #0056b3;
+}

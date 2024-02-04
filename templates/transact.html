@@ -2,9 +2,17 @@
 <html>
 <head>
     <title>Transact</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/transaction-style.css">
+
 </head>
+
 <body>
-    <form method="POST">
+    <div class="transaction-container">
+
+        <h1>Make a Transfer</h1>
+        <form method="POST">
+
         <label for="receiver">Receiver</label>
         <input type="text" id="receiver" name="receiver" required>
         <label for="coins">Coins</label>
@@ -13,6 +21,7 @@
         <input type="text" id="subject" name="subject" required>
         <button type="submit">Transact</button>
     </form>
-    <a href="{{ url_for('routes.homepage') }}">Back</a>
+    <a class="back-link" href="{{ url_for('routes.homepage') }}">Back</a>
+</div>
 </body>
 </html>

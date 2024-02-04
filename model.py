@@ -1,3 +1,4 @@
+#model.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin
 
@@ -10,6 +11,7 @@ class Participant(UserMixin, db.Model):
     name = db.Column(db.String(50))
     coins = db.Column(db.Integer)
     password = db.Column(db.String(100))
+    profile_picture_url = db.Column(db.String(1000))
 
 class CentralBank(db.Model):
     id = db.Column(db.Integer, primary_key=True)

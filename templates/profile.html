@@ -2,13 +2,28 @@
 <html>
 <head>
     <title>Profile</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/profile-style.css">
 </head>
 <body>
-    <form method="POST">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="{{ current_user.name }}" required>
-        <button type="submit">Update</button>
-    </form>
-    <a href="{{ url_for('routes.homepage') }}">Back</a>
+    <div class="profile-container">
+        <h1>M2M Coin</h1>
+        
+        <!-- Welcome message -->
+        <h2>Welcome, {{ current_user.name }}!</h2>
+        
+        <!-- Profile update form -->
+        <form method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ current_user.name }}" required>
+            <label for="profile_picture_url">Profile Picture URL</label>
+            <input type="url" id="profile_picture_url" name="profile_picture_url">
+            <button type="submit">Update</button>
+        </form>
+        
+        
+        <!-- Back button -->
+        <a href="{{ url_for('routes.homepage') }}" class="signup-link">Back</a>
+    </div>
 </body>
 </html>

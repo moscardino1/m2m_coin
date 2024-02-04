@@ -1,3 +1,4 @@
+#app.py
 from flask import Flask
 from model import db, login_manager
 from routes import bp as routes_bp

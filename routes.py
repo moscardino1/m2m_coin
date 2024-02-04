@@ -1,3 +1,4 @@
+#routes.py
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime
@@ -6,7 +7,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 bp = Blueprint('routes', __name__)
 
-
+@bp.route('/', methods=['GET', 'POST'])
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('routes.homepage'))
+    else:
+        return redirect(url_for('routes.login'))
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -34,9 +40,9 @@ def homepage():
     central_bank = CentralBank.query.all()
     cb_activity = sum([central_bank.coins for central_bank in central_bank])
     total_activity = sum([participant.coins for participant in participants],cb_activity)
-
+    perc_user=current_user.coins/total_activity*100 
     transactions = Transaction.query.order_by(Transaction.timestamp.desc()).all()
-    return render_template('homepage.html', participants=participants, central_bank=central_bank, transactions=transactions,total_activity=total_activity,cb_activity=cb_activity)
+    return render_template('homepage.html', perc_user=perc_user, participants=participants, central_bank=central_bank, transactions=transactions,total_activity=total_activity,cb_activity=cb_activity)
 
 
 @bp.route('/profile', methods=['GET', 'POST'])
@@ -44,10 +50,14 @@ def homepage():
 def profile():
     if request.method == 'POST':
         current_user.name = request.form['name']
+        profile_picture_url = request.form['profile_picture_url']
+        current_user.profile_picture_url = profile_picture_url
+
         db.session.commit()
         return redirect(url_for('routes.homepage'))
     return render_template('profile.html')
 
+ 
 @bp.route('/transact', methods=['GET', 'POST'])
 @login_required
 def transact():
@@ -91,3 +101,8 @@ def exit():
 def logout():
     logout_user()
     return redirect(url_for('routes.login'))
+
+
+@bp.route('/faq')
+def faq():
+    return render_template('faq.html')

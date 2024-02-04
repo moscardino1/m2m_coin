@@ -1,21 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Homepage</title>
+    <title>Homepage - M2M-Coin</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+ 
 </head>
 <body>
-    <h1>Welcome, {{ current_user.name }}!</h1>
-    <h2>Total Coins: {{ total_activity }}</h2>
-    <h2>Central Bank: {{ cb_activity }}</h2>
-    <h2>Your Coins: {{ current_user.coins }}</h2>
-    <h2>Participant Balances</h2>
-    {% for participant in participants %}
-        <p>{{ participant.name }}: {{ participant.coins }}</p>
-    {% endfor %}
-    <h2>Transaction Log</h2>
-    {% for transaction in transactions %}
-        <p>{{ transaction.timestamp }}: {{ transaction.sender.name }} -> {{ transaction.receiver.name }} ({{ transaction.subject }})</p>
-    {% endfor %}
+    <h1 id="title">&#129689; M2M-Coin &#129689;
+    </h1>
+    <div id="website-sections">        
+        <a >Total Coins: {{ total_activity }}</a>
+            <a> Central Bank: {{ cb_activity }}</a>
+</div>
+<div id="website-sections">
+    <a href="{{ url_for('routes.profile') }}" class="button">Profile</a>
+    <a href="{{ url_for('routes.transact') }}" class="button">Transact</a>
+    <a href="{{ url_for('routes.logout') }}" class="button">Logout</a>
+    <a href="{{ url_for('routes.faq') }}" class="button">FAQ</a>
+</div>
+
+
+    <div id="user-welcome">
+        <img src="{{ current_user.profile_picture_url }}" alt="User Image">
+        <h2>Welcome, {{ current_user.name }}!</h2>
+        <h3>Your Coins: {{ current_user.coins }}, {{ perc_user }} % of the Total Network  </h3>
+
+    </div>
+
+    <div id="navigation-panel" class="navigation-panel">
+        <!-- Profile Navigation Panel -->
+        <ul>
+            <li><a href="{{ url_for('routes.profile') }}">Profile</a></li>
+            <li><a href="{{ url_for('routes.transact') }}">Transact</a></li>
+        </ul>
+    </div>
+    
+    <h3>Participant Balances</h3>
+    <table id="participant-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Coins</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for participant in participants %}
+            <tr>
+                <td>{{ participant.name }}</td>
+                <td>{{ participant.coins }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Transaction Log</h3>
+    <table id="transaction-table" class="display">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Sender</th>
+                <th>Receiver</th>
+                <th>Subject</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.timestamp }}</td>
+                <td>{{ transaction.sender.name }}</td>
+                <td>{{ transaction.receiver.name }}</td>
+                <td>{{ transaction.subject }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#transaction-table, #participant-table').DataTable({
+                paging: true,
+                pageLength: 5,
+                ordering: true,
+                searching: true
+            });
+
+            // Toggle navigation panel visibility
+            $('#navigation-panel').hide();
+            $('a[href="#navigation-panel"]').click(function(e) {
+                e.preventDefault();
+                $('#navigation-panel').toggle();
+            });
+        });
+    </script>
+
     {% if current_user.id == 1 %}
         <form method="POST" action="{{ url_for('routes.redistribute') }}">
             <button type="submit">Redistribute Coins</button>
@@ -24,8 +105,5 @@
     <form method="POST" action="{{ url_for('routes.exit') }}">
         <button type="submit">Exit System</button>
     </form>
-    <a href="{{ url_for('routes.profile') }}">Profile</a>
-    <a href="{{ url_for('routes.transact') }}">Transact</a>
-    <a href="{{ url_for('routes.logout') }}">Logout</a>
 </body>
 </html>
