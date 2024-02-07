@@ -58,15 +58,15 @@
         {% endfor %}
     </tbody>
 </table>
-
-    
 <h3>Transaction Log</h3>
 <table id="transaction-table" class="display">
     <thead>
         <tr>
             <th>Timestamp</th>
             <th>Sender</th>
+            <th>Sender Status</th> <!-- New column for sender status -->
             <th>Receiver</th>
+            <th>Receiver Status</th> <!-- New column for receiver status -->
             <th>Amount</th>
             <th>Subject</th>
         </tr>
@@ -76,8 +76,10 @@
         <tr>
             <td>{{ transaction.timestamp }}</td>
             <td>{{ transaction.sender.name }}</td>
+            <td>{% if transaction.sender.is_active %} Active {% else %} Inactive {% endif %}</td> <!-- Display sender status -->
             <td>{{ transaction.receiver.name }}</td>
-            <td>{{ transaction.amount }}</td>  <!-- Include the amount column -->
+            <td>{% if transaction.receiver.is_active %} Active {% else %} Inactive {% endif %}</td> <!-- Display receiver status -->
+            <td>{{ transaction.amount }}</td>
             <td>{{ transaction.subject }}</td>
         </tr>
         {% endfor %}
