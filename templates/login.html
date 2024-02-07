@@ -4,20 +4,20 @@
     <title>Login</title>
     <link rel="stylesheet" href="static/login-style.css">
     <link rel="stylesheet" href="static/styles.css">
-
 </head>
-<div class="login-container">
-
 <body>
+<div class="login-container">
     <form method="POST">
         <label for="name">Name</label>
         <input type="text" id="name" name="name" required>
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required>
         <button type="submit">Login</button>
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
     </form>
     <p>Don't have an account? <a href="{{ url_for('routes.register') }}">Register</a></p>
 </div>
-
 </body>
 </html>

@@ -28,15 +28,22 @@ def register():
 
         return redirect(url_for('routes.login'))
     return render_template('register.html')
-
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None  # Initialize error message
     if request.method == 'POST':
         user = Participant.query.filter_by(name=request.form['name']).first()
         if user and check_password_hash(user.password, request.form['password']):
-            login_user(user)
-            return redirect(url_for('routes.homepage'))
-    return render_template('login.html')
+            if user.is_active:
+                login_user(user)
+                return redirect(url_for('routes.homepage'))
+            else:
+                error = "User is not active. Please contact the administrator."  # Set error message
+        else:
+            error = "Invalid username or password"  # Set error message
+    return render_template('login.html', error=error)
+
+
 
 @bp.route('/homepage', methods=['GET'])
 @login_required
