@@ -20,6 +20,12 @@ def register():
         new_user = Participant(name=request.form['name'], password=hashed_password, coins=100)
         db.session.add(new_user)
         db.session.commit()
+
+        # Add transaction for entering the system
+        transaction = Transaction(timestamp=datetime.utcnow(), sender=new_user, receiver=new_user, amount=100, subject="entered the system")
+        db.session.add(transaction)
+        db.session.commit()
+
         return redirect(url_for('routes.login'))
     return render_template('register.html')
 
@@ -32,17 +38,29 @@ def login():
             return redirect(url_for('routes.homepage'))
     return render_template('login.html')
 
-
 @bp.route('/homepage', methods=['GET'])
 @login_required
 def homepage():
-    participants = Participant.query.all()
-    central_bank = CentralBank.query.all()
-    cb_activity = sum([central_bank.coins for central_bank in central_bank])
-    total_activity = sum([participant.coins for participant in participants],cb_activity)
-    perc_user=current_user.coins/total_activity*100 
+    active_participants = Participant.query.filter_by(is_active=True).all()
+    central_bank = CentralBank.query.first()
+
+    if central_bank:
+        cb_coins = central_bank.coins
+    else:
+        cb_coins = 0
+
+    total_activity = sum([participant.coins for participant in active_participants]) + cb_coins
+    perc_user = current_user.coins / total_activity 
     transactions = Transaction.query.order_by(Transaction.timestamp.desc()).all()
-    return render_template('homepage.html', perc_user=perc_user, participants=participants, central_bank=central_bank, transactions=transactions,total_activity=total_activity,cb_activity=cb_activity)
+
+    # Calculate the ratio of each participant's coins to the total activity
+    participant_ratios = []
+    for participant in active_participants:
+        ratio = participant.coins / total_activity  
+        participant_ratios.append(ratio)
+
+    return render_template('homepage.html', perc_user=perc_user, participants=active_participants, central_bank=central_bank,
+                           transactions=transactions, total_activity=total_activity, participant_ratios=participant_ratios)
 
 
 @bp.route('/profile', methods=['GET', 'POST'])
@@ -57,43 +75,73 @@ def profile():
         return redirect(url_for('routes.homepage'))
     return render_template('profile.html')
 
- 
 @bp.route('/transact', methods=['GET', 'POST'])
 @login_required
 def transact():
     if request.method == 'POST':
         receiver = Participant.query.filter_by(name=request.form['receiver']).first()
-        if receiver and current_user.coins >= int(request.form['coins']):
-            current_user.coins -= int(request.form['coins'])
-            receiver.coins += int(request.form['coins'])
-            transaction = Transaction(timestamp=datetime.utcnow(), sender_id=current_user.id, receiver_id=receiver.id, subject=request.form['subject'])
+        amount = int(request.form['coins'])  # Get the amount from the form data
+        if receiver and current_user.coins >= amount:
+            current_user.coins -= amount
+            receiver.coins += amount
+            transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=receiver, amount=amount, subject=request.form['subject'])
             db.session.add(transaction)
             db.session.commit()
         return redirect(url_for('routes.homepage'))
     return render_template('transact.html')
 
-@bp.route('/redistribute', methods=['POST'])
-@login_required
-def redistribute():
-    if current_user.id != 1:  # Assuming the central bank's ID is 1
-        return redirect(url_for('routes.homepage'))
-    participants = Participant.query.all()
-    total_activity = sum([p.activity for p in participants])
-    for participant in participants:
-        participant.coins += (participant.activity / total_activity) * CentralBank.query.first().coins
-        participant.activity = 0
-    CentralBank.query.first().coins = 0
-    db.session.commit()
-    return redirect(url_for('routes.homepage'))
 
-@bp.route('/exit', methods=['POST'])
+@bp.route('/redistribute-coins', methods=['POST'])
 @login_required
-def exit():
-    CentralBank.query.first().coins += current_user.coins
+def redistribute_coins():
+    if current_user.coins == 0:
+        return redirect(url_for('routes.homepage'))
+
+    active_participants = Participant.query.filter_by(is_active=True).all()
+    num_participants = len(active_participants)
+
+    if num_participants == 0:
+        return redirect(url_for('routes.homepage'))
+
+    redistribution_amount = current_user.coins // (num_participants - 1)
+
+    for participant in active_participants:
+        if participant != current_user:  # Skip redistribution to the current user
+            participant.coins += redistribution_amount
+
+            # Log redistribution transaction for each participant
+            transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=participant, amount=redistribution_amount, subject="Redistribution spot")
+            db.session.add(transaction)
+
     current_user.coins = 0
-    db.session.delete(current_user)
     db.session.commit()
-    logout_user()
+
+    return redirect(url_for('routes.homepage'))
+@bp.route('/exit-system', methods=['POST'])
+@login_required
+def exit_system():
+    if 'exit-system' in request.form:
+        if current_user.coins > 0:
+            active_participants = Participant.query.filter(Participant.is_active == True).all()
+            num_participants = len(active_participants)
+            
+            if num_participants > 0:
+                redistribution_amount = current_user.coins // (num_participants - 1)
+                
+                for participant in active_participants:
+                    if participant != current_user:  # Skip redistribution to the current user
+                        participant.coins += redistribution_amount
+
+                        # Log redistribution transaction for each participant
+                        transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=participant, amount=redistribution_amount, subject="Redistribution exit")
+                        db.session.add(transaction)
+                
+                db.session.commit()
+
+        current_user.is_active = False
+        db.session.commit()
+        logout_user()
+
     return redirect(url_for('routes.login'))
 
 @bp.route('/logout')

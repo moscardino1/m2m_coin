@@ -25,69 +25,86 @@
     <div id="user-welcome">
         <img src="{{ current_user.profile_picture_url }}" alt="User Image">
         <h2>Welcome, {{ current_user.name }}!</h2>
-        <h3>Your Coins: {{ current_user.coins }}, {{ perc_user }} % of the Total Network  </h3>
+        <h3>Your Coins: {{ current_user.coins }}, {{ '%.2f' % ( perc_user *100) }}% of the Total Network  </h3>
 
     </div>
+    <div id="website-sections">
 
-    <div id="navigation-panel" class="navigation-panel">
-        <!-- Profile Navigation Panel -->
-        <ul>
-            <li><a href="{{ url_for('routes.profile') }}">Profile</a></li>
-            <li><a href="{{ url_for('routes.transact') }}">Transact</a></li>
-        </ul>
+        <form method="POST" action="{{ url_for('routes.redistribute_coins') }}">
+            <button type="submit" class="button">Redistribute My Coins Equally</button>
+        </form>
+        <form method="POST" action="{{ url_for('routes.exit_system') }}">
+            <button type="submit" name="exit-system" class="button">Exit System</button>
+        </form>
+        
+
     </div>
-    
     <h3>Participant Balances</h3>
-    <table id="participant-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Coins</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for participant in participants %}
-            <tr>
-                <td>{{ participant.name }}</td>
-                <td>{{ participant.coins }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<table id="participant-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Coins</th>
+            <th>Ratio to Total Activity</th> <!-- New column -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in range(participants|length) %}
+        <tr>
+            <td>{{ participants[i].name }}</td>
+            <td>{{ participants[i].coins }}</td>
+            <td>{{ '%.2f' % (participant_ratios[i]*100) }}%</td> <!-- Format as percentage -->
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-    <h3>Transaction Log</h3>
-    <table id="transaction-table" class="display">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Sender</th>
-                <th>Receiver</th>
-                <th>Subject</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for transaction in transactions %}
-            <tr>
-                <td>{{ transaction.timestamp }}</td>
-                <td>{{ transaction.sender.name }}</td>
-                <td>{{ transaction.receiver.name }}</td>
-                <td>{{ transaction.subject }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    
+<h3>Transaction Log</h3>
+<table id="transaction-table" class="display">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>Sender</th>
+            <th>Receiver</th>
+            <th>Amount</th>
+            <th>Subject</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ transaction.timestamp }}</td>
+            <td>{{ transaction.sender.name }}</td>
+            <td>{{ transaction.receiver.name }}</td>
+            <td>{{ transaction.amount }}</td>  <!-- Include the amount column -->
+            <td>{{ transaction.subject }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#transaction-table, #participant-table').DataTable({
+            $('#transaction-table').DataTable({
                 paging: true,
-                pageLength: 5,
+                pageLength: 10,
                 ordering: true,
-                searching: true
+                searching: true,
+                order: [[0, 'desc']] // Order by the first column (Timestamp) in descending order by default
             });
-
+    
+            $('#participant-table').DataTable({
+                paging: true,
+                pageLength: 10,
+                ordering: true,
+                searching: true,
+                order: [[1, 'desc']] // Order by the second column (Coins) in descending order by default
+            });
+    
             // Toggle navigation panel visibility
             $('#navigation-panel').hide();
             $('a[href="#navigation-panel"]').click(function(e) {
@@ -98,12 +115,8 @@
     </script>
 
     {% if current_user.id == 1 %}
-        <form method="POST" action="{{ url_for('routes.redistribute') }}">
-            <button type="submit">Redistribute Coins</button>
-        </form>
+ 
     {% endif %}
-    <form method="POST" action="{{ url_for('routes.exit') }}">
-        <button type="submit">Exit System</button>
-    </form>
+
 </body>
 </html>
