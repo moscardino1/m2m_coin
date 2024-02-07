@@ -4,19 +4,23 @@
     <title>Register</title>
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/register-style.css">
-
 </head>
 <body>
     <div class="register-container">
-
-    <form method="POST">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" required>
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
-        <button type="submit">Register</button>
-    </form>
-</div>
-
+        <form method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Register</button>
+        </form>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
 </body>
 </html>

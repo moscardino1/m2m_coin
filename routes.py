@@ -4,6 +4,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime
 from model import db, Participant, CentralBank, Transaction  # Adjust import here
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import flash
 
 bp = Blueprint('routes', __name__)
 
@@ -16,6 +17,13 @@ def index():
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # Check if the username already exists
+        existing_user = Participant.query.filter_by(name=request.form['name']).first()
+        if existing_user:
+            flash('Username already exists. Please choose a different username.', 'error')
+            return redirect(url_for('routes.register'))
+
+        # If the username is unique, proceed with registration
         hashed_password = generate_password_hash(request.form['password'])
         new_user = Participant(name=request.form['name'], password=hashed_password, coins=100)
         db.session.add(new_user)
