@@ -20,7 +20,6 @@ pip install -r requirements.txt
   ```
 
 
-
 ## Usage
 1. Set up the database:
 - Ensure you have SQLite installed.
@@ -34,7 +33,7 @@ python app.py
 
 
 3. Access the application:
-- Open a web browser and go to `http://localhost:5000`.
+- Open a web browser and go to `http://127.0.0.1:5000`.
 
 ## Features
 - **User Registration and Login:** Participants can register and log in to the system securely.
