@@ -40,24 +40,30 @@
 
     </div>
     <h3>Participant Balances</h3>
-<table id="participant-table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Coins</th>
-            <th>Ratio to Total Activity</th> <!-- New column -->
-        </tr>
-    </thead>
-    <tbody>
-        {% for i in range(participants|length) %}
-        <tr>
-            <td>{{ participants[i].name }}</td>
-            <td>{{ participants[i].coins }}</td>
-            <td>{{ '%.2f' % (participant_ratios[i]*100) }}%</td> <!-- Format as percentage -->
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table id="participant-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Coins</th>
+                <th>Ratio to Total Activity</th> <!-- New column -->
+                <th>Active</th> <!-- New column for Active status -->
+                <th>Last Updated</th> <!-- New column for Last Updated timestamp -->
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(participants|length) %}
+            <tr>
+                <td>{{ participants[i].name }}</td>
+                <td>{{ participants[i].coins }}</td>
+                <td>{{ '%.2f' % (participant_ratios[i]*100) }}%</td> <!-- Format as percentage -->
+                <td>{% if participants[i].is_active %} Active {% else %} Inactive {% endif %}</td> <!-- Display active status -->
+                <td>{{ participants[i].update_timestamp }}</td> <!-- Display last updated timestamp -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
 <h3>Transaction Log</h3>
 <table id="transaction-table" class="display">
     <thead>
@@ -104,7 +110,7 @@
                 pageLength: 10,
                 ordering: true,
                 searching: true,
-                order: [[1, 'desc']] // Order by the second column (Coins) in descending order by default
+                order: [[3, 'asc'],[1, 'desc']] // Order by the second column (Coins) in descending order by default
             });
     
             // Toggle navigation panel visibility

@@ -4,24 +4,23 @@
     <title>Transact</title>
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/transaction-style.css">
-
 </head>
-
 <body>
     <div class="transaction-container">
-
         <h1>Make a Transfer</h1>
         <form method="POST">
-
-        <label for="receiver">Receiver</label>
-        <input type="text" id="receiver" name="receiver" required>
-        <label for="coins">Coins</label>
-        <input type="number" id="coins" name="coins" required>
-        <label for="subject">Subject</label>
-        <input type="text" id="subject" name="subject" required>
-        <button type="submit">Transact</button>
-    </form>
-    <a class="back-link" href="{{ url_for('routes.homepage') }}">Back</a>
-</div>
+            <label for="receiver">Receiver</label>
+            <input type="text" id="receiver" name="receiver" required>
+            <label for="coins">Coins</label>
+            <input type="number" id="coins" name="coins" required>
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" required>
+            <button type="submit">Transact</button>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+        </form>
+        <a class="back-link" href="{{ url_for('routes.homepage') }}">Back</a>
+    </div>
 </body>
 </html>

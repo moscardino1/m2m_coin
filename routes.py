@@ -52,12 +52,12 @@ def login():
     return render_template('login.html', error=error)
 
 
-
 @bp.route('/homepage', methods=['GET'])
 @login_required
 def homepage():
-    active_participants = Participant.query.filter_by(is_active=True).all()
+    all_participants = Participant.query.all()
     central_bank = CentralBank.query.first()
+    active_participants = Participant.query.filter_by(is_active=True).all()
 
     if central_bank:
         cb_coins = central_bank.coins
@@ -70,11 +70,11 @@ def homepage():
 
     # Calculate the ratio of each participant's coins to the total activity
     participant_ratios = []
-    for participant in active_participants:
+    for participant in all_participants:
         ratio = participant.coins / total_activity  
         participant_ratios.append(ratio)
 
-    return render_template('homepage.html', perc_user=perc_user, participants=active_participants, central_bank=central_bank,
+    return render_template('homepage.html', perc_user=perc_user, participants=all_participants, central_bank=central_bank,
                            transactions=transactions, total_activity=total_activity, participant_ratios=participant_ratios)
 
 
@@ -93,17 +93,36 @@ def profile():
 @bp.route('/transact', methods=['GET', 'POST'])
 @login_required
 def transact():
+    error = None  # Initialize error message
     if request.method == 'POST':
-        receiver = Participant.query.filter_by(name=request.form['receiver']).first()
-        amount = int(request.form['coins'])  # Get the amount from the form data
-        if receiver and current_user.coins >= amount:
-            current_user.coins -= amount
-            receiver.coins += amount
-            transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=receiver, amount=amount, subject=request.form['subject'])
-            db.session.add(transaction)
-            db.session.commit()
-        return redirect(url_for('routes.homepage'))
-    return render_template('transact.html')
+        receiver_name = request.form['receiver']
+        receiver = Participant.query.filter_by(name=receiver_name).first()
+
+        # Check if receiver exists and is active
+        if receiver:
+            if receiver.is_active:
+                amount = int(request.form['coins'])  # Get the amount from the form data
+
+                # Check if sender is not the receiver
+                if receiver != current_user:
+                    # Check if sender has enough coins
+                    if current_user.coins >= amount:
+                        current_user.coins -= amount
+                        receiver.coins += amount
+                        transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=receiver, amount=amount, subject=request.form['subject'])
+                        db.session.add(transaction)
+                        db.session.commit()
+                        return redirect(url_for('routes.homepage'))
+                    else:
+                        error = "Insufficient coins for transaction"
+                else:
+                    error = "You cannot transact with yourself"
+            else:
+                error = "Receiver is inactive"
+        else:
+            error = "Receiver not found"
+
+    return render_template('transact.html', error=error)
 
 
 @bp.route('/redistribute-coins', methods=['POST'])
@@ -132,6 +151,8 @@ def redistribute_coins():
     db.session.commit()
 
     return redirect(url_for('routes.homepage'))
+
+
 @bp.route('/exit-system', methods=['POST'])
 @login_required
 def exit_system():
@@ -154,6 +175,8 @@ def exit_system():
                 db.session.commit()
 
         current_user.is_active = False
+        current_user.coins = 0
+
         db.session.commit()
         logout_user()
 
