@@ -264,3 +264,604 @@ def logout():
 </body>
 </html>
 
+import os
+
+def append_files_to_txt(directory, file_extension, output_file):
+    with open(output_file, 'a') as combined_file:
+        for file in os.listdir(directory):
+            file_path = os.path.join(directory, file)
+            if os.path.isfile(file_path) and file.endswith(file_extension):
+                with open(file_path, 'r') as f:
+                    combined_file.write(f.read())
+                combined_file.write('\n')  # Separate files by a newline
+
+if __name__ == "__main__":
+    directory = os.getcwd()
+    output_file = os.path.join(directory, 'combined_files.txt')
+
+    # Append all .py files
+    append_files_to_txt(directory, '.py', output_file)
+
+    # Append all .html files in the 'templates' directory
+    templates_directory = os.path.join(directory, 'templates')
+    if os.path.exists(templates_directory) and os.path.isdir(templates_directory):
+        append_files_to_txt(templates_directory, '.html', output_file)
+    else:
+        print("The 'templates' directory does not exist.")
+
+#model.py
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin
+import uuid
+from sqlalchemy import func
+from datetime import datetime
+ 
+
+
+db = SQLAlchemy()
+login_manager = LoginManager()
+
+
+
+
+class CentralBank(db.Model):
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    coins = db.Column(db.Float)
+
+
+class Participant(UserMixin, db.Model):
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = db.Column(db.String(50))
+    coins = db.Column(db.Float)
+    password = db.Column(db.String(100))
+    profile_picture_url = db.Column(db.String(1000))
+    is_active = db.Column(db.Boolean, default=True)
+    insert_timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Insert timestamp
+    update_timestamp = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Update timestamp
+
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime)
+    sender_id = db.Column(db.String(36), db.ForeignKey('participant.id'))
+    receiver_id = db.Column(db.String(36), db.ForeignKey('participant.id'))
+    amount = db.Column(db.Float)  # Add this line to define the amount attribute
+    subject = db.Column(db.String(200))
+
+    sender = db.relationship('Participant', foreign_keys=[sender_id], backref='sent_transactions')
+    receiver = db.relationship('Participant', foreign_keys=[receiver_id], backref='received_transactions')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Participant.query.get((user_id))
+
+
+#app.py
+from flask import Flask
+from model import db, login_manager
+from routes import bp as routes_bp
+
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+    app.config['SECRET_KEY'] = 'secret-key'
+    
+    db.init_app(app)
+    login_manager.init_app(app)
+
+    with app.app_context():
+        db.create_all()
+
+    app.register_blueprint(routes_bp)
+
+    return app
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(debug=True)
+
+#routes.py
+from flask import Blueprint, render_template, request, redirect, url_for
+from flask_login import login_user, login_required, logout_user, current_user
+from datetime import datetime
+from model import db, Participant, CentralBank, Transaction  # Adjust import here
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import flash
+
+bp = Blueprint('routes', __name__)
+
+@bp.route('/', methods=['GET', 'POST'])
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('routes.homepage'))
+    else:
+        return redirect(url_for('routes.login'))
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # Check if the username already exists
+        existing_user = Participant.query.filter_by(name=request.form['name']).first()
+        if existing_user:
+            flash('Username already exists. Please choose a different username.', 'error')
+            return redirect(url_for('routes.register'))
+
+        # If the username is unique, proceed with registration
+        hashed_password = generate_password_hash(request.form['password'])
+        new_user = Participant(name=request.form['name'], password=hashed_password, coins=100)
+        db.session.add(new_user)
+        db.session.commit()
+
+        # Add transaction for entering the system
+        transaction = Transaction(timestamp=datetime.utcnow(), sender=new_user, receiver=new_user, amount=100, subject="entered the system")
+        db.session.add(transaction)
+        db.session.commit()
+
+        return redirect(url_for('routes.login'))
+    return render_template('register.html')
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None  # Initialize error message
+    if request.method == 'POST':
+        user = Participant.query.filter_by(name=request.form['name']).first()
+        if user and check_password_hash(user.password, request.form['password']):
+            if user.is_active:
+                login_user(user)
+                return redirect(url_for('routes.homepage'))
+            else:
+                error = "User is not active. Please contact the administrator."  # Set error message
+        else:
+            error = "Invalid username or password"  # Set error message
+    return render_template('login.html', error=error)
+
+
+@bp.route('/homepage', methods=['GET'])
+@login_required
+def homepage():
+    all_participants = Participant.query.all()
+    central_bank = CentralBank.query.first()
+    active_participants = Participant.query.filter_by(is_active=True).all()
+
+    if central_bank:
+        cb_coins = central_bank.coins
+    else:
+        cb_coins = 0
+
+    total_activity = sum([participant.coins for participant in active_participants]) + cb_coins
+    perc_user = current_user.coins / total_activity 
+    transactions = Transaction.query.order_by(Transaction.timestamp.desc()).all()
+
+    # Calculate the ratio of each participant's coins to the total activity
+    participant_ratios = []
+    for participant in all_participants:
+        ratio = participant.coins / total_activity  
+        participant_ratios.append(ratio)
+
+    return render_template('homepage.html', perc_user=perc_user, participants=all_participants, central_bank=central_bank,
+                           transactions=transactions, total_activity=total_activity, participant_ratios=participant_ratios)
+
+
+@bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        current_user.name = request.form['name']
+        profile_picture_url = request.form['profile_picture_url']
+        current_user.profile_picture_url = profile_picture_url
+
+        db.session.commit()
+        return redirect(url_for('routes.homepage'))
+    return render_template('profile.html')
+
+@bp.route('/transact', methods=['GET', 'POST'])
+@login_required
+def transact():
+    error = None  # Initialize error message
+    if request.method == 'POST':
+        receiver_name = request.form['receiver']
+        receiver = Participant.query.filter_by(name=receiver_name).first()
+
+        # Check if receiver exists and is active
+        if receiver:
+            if receiver.is_active:
+                amount_str = request.form['coins']
+                # Check if the input contains a comma instead of a period
+                if ',' in amount_str:
+                    error = "Please use a period (.) as the decimal separator for coins."
+                else:
+                    try:
+                        amount = float(amount_str)
+                        # Check if sender is not the receiver
+                        if receiver != current_user:
+                            # Check if sender has enough coins
+                            if current_user.coins >= amount:
+                                current_user.coins -= amount
+                                receiver.coins += amount
+                                transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=receiver, amount=amount, subject=request.form['subject'])
+                                db.session.add(transaction)
+                                db.session.commit()
+                                return redirect(url_for('routes.homepage'))
+                            else:
+                                error = "Insufficient coins for transaction"
+                        else:
+                            error = "You cannot transact with yourself"
+                    except ValueError:
+                        error = "Invalid input for coins. Please enter a valid number."
+            else:
+                error = "Receiver is inactive"
+        else:
+            error = "Receiver not found"
+
+    return render_template('transact.html', error=error)
+
+
+@bp.route('/redistribute-coins', methods=['POST'])
+@login_required
+def redistribute_coins():
+    if current_user.coins == 0:
+        return redirect(url_for('routes.homepage'))
+
+    active_participants = Participant.query.filter_by(is_active=True).all()
+    num_participants = len(active_participants)
+
+    if num_participants == 0:
+        return redirect(url_for('routes.homepage'))
+
+    redistribution_amount = current_user.coins / (num_participants - 1)
+
+    for participant in active_participants:
+        if participant != current_user:  # Skip redistribution to the current user
+            participant.coins += redistribution_amount
+
+            # Log redistribution transaction for each participant
+            transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=participant, amount=redistribution_amount, subject="Redistribution spot")
+            db.session.add(transaction)
+
+    current_user.coins = 0
+    db.session.commit()
+
+    return redirect(url_for('routes.homepage'))
+
+
+@bp.route('/exit-system', methods=['POST'])
+@login_required
+def exit_system():
+    if 'exit-system' in request.form:
+        if current_user.coins > 0:
+            active_participants = Participant.query.filter(Participant.is_active == True).all()
+            num_participants = len(active_participants)
+            
+            if num_participants > 0:
+                redistribution_amount = current_user.coins / (num_participants - 1)
+                
+                for participant in active_participants:
+                    if participant != current_user:  # Skip redistribution to the current user
+                        participant.coins += redistribution_amount
+
+                        # Log redistribution transaction for each participant
+                        transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=participant, amount=redistribution_amount, subject="Redistribution exit")
+                        db.session.add(transaction)
+                
+                db.session.commit()
+
+        current_user.is_active = False
+        current_user.coins = 0
+
+        db.session.commit()
+        logout_user()
+
+    return redirect(url_for('routes.login'))
+
+@bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('routes.login'))
+
+
+@bp.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/profile-style.css">
+</head>
+<body>
+    <div class="profile-container">
+        <h1>M2M Coin</h1>
+        
+        <!-- Welcome message -->
+        <h2>Welcome, {{ current_user.name }}!</h2>
+        
+        <!-- Profile update form -->
+        <form method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ current_user.name }}" required>
+            <label for="profile_picture_url">Profile Picture URL</label>
+            <input type="url" id="profile_picture_url" name="profile_picture_url">
+            <button type="submit">Update</button>
+        </form>
+        
+        
+        <!-- Back button -->
+        <a href="{{ url_for('routes.homepage') }}" class="signup-link">Back</a>
+    </div>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transact</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/transaction-style.css">
+</head>
+<body>
+    <div class="transaction-container">
+        <h1>Make a Transfer</h1>
+        <form method="POST">
+            <label for="receiver">Receiver</label>
+            <input type="text" id="receiver" name="receiver" required>
+            <label for="coins">Coins</label>
+            <input type="float" id="coins" name="coins" required>
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" required>
+            <button type="submit">Transact</button>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+        </form>
+        <a class="back-link" href="{{ url_for('routes.homepage') }}">Back</a>
+    </div>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Homepage - M2M-Coin</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+ 
+</head>
+<body>
+    <h1 id="title">&#129689; M2M-Coin &#129689;
+    </h1>
+    <div id="website-sections">        
+        <a >Total Coins: {{ total_activity }}</a>
+            <a> Central Bank: {{ cb_activity }}</a>
+</div>
+<div id="website-sections">
+    <a href="{{ url_for('routes.profile') }}" class="button">Profile</a>
+    <a href="{{ url_for('routes.transact') }}" class="button">Transact</a>
+    <a href="{{ url_for('routes.logout') }}" class="button">Logout</a>
+    <a href="{{ url_for('routes.faq') }}" class="button">FAQ</a>
+</div>
+
+
+    <div id="user-welcome">
+        <img src="{{ current_user.profile_picture_url }}" alt="User Image">
+        <h2>Welcome, {{ current_user.name }}!</h2>
+        <h3>Your Coins: {{ current_user.coins }}, {{ '%.2f' % ( perc_user *100) }}% of the Total Network  </h3>
+
+    </div>
+    <div id="website-sections">
+
+        <form method="POST" action="{{ url_for('routes.redistribute_coins') }}">
+            <button type="submit" class="button">Redistribute My Coins Equally</button>
+        </form>
+        <form method="POST" action="{{ url_for('routes.exit_system') }}">
+            <button type="submit" name="exit-system" class="button">Exit System</button>
+        </form>
+        
+
+    </div>
+    <h3>Participant Balances</h3>
+    <table id="participant-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Coins</th>
+                <th>Ratio to Total Activity</th> <!-- New column -->
+                <th>Active</th> <!-- New column for Active status -->
+                <th>Last Updated</th> <!-- New column for Last Updated timestamp -->
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(participants|length) %}
+            <tr>
+                <td>{{ participants[i].name }}</td>
+                <td>{{ participants[i].coins }}</td>
+                <td>{{ '%.2f' % (participant_ratios[i]*100) }}%</td> <!-- Format as percentage -->
+                <td>{% if participants[i].is_active %} Active {% else %} Inactive {% endif %}</td> <!-- Display active status -->
+                <td>{{ participants[i].update_timestamp }}</td> <!-- Display last updated timestamp -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+<h3>Transaction Log</h3>
+<table id="transaction-table" class="display">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>Sender</th>
+            <th>Sender Status</th> <!-- New column for sender status -->
+            <th>Receiver</th>
+            <th>Receiver Status</th> <!-- New column for receiver status -->
+            <th>Amount</th>
+            <th>Subject</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ transaction.timestamp }}</td>
+            <td>{{ transaction.sender.name }}</td>
+            <td>{% if transaction.sender.is_active %} Active {% else %} Inactive {% endif %}</td> <!-- Display sender status -->
+            <td>{{ transaction.receiver.name }}</td>
+            <td>{% if transaction.receiver.is_active %} Active {% else %} Inactive {% endif %}</td> <!-- Display receiver status -->
+            <td>{{ transaction.amount }}</td>
+            <td>{{ transaction.subject }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#transaction-table').DataTable({
+                paging: true,
+                pageLength: 10,
+                ordering: true,
+                searching: true,
+                order: [[0, 'desc']] // Order by the first column (Timestamp) in descending order by default
+            });
+    
+            $('#participant-table').DataTable({
+                paging: true,
+                pageLength: 10,
+                ordering: true,
+                searching: true,
+                order: [[3, 'asc'],[1, 'desc']] // Order by the second column (Coins) in descending order by default
+            });
+    
+            // Toggle navigation panel visibility
+            $('#navigation-panel').hide();
+            $('a[href="#navigation-panel"]').click(function(e) {
+                e.preventDefault();
+                $('#navigation-panel').toggle();
+            });
+        });
+    </script>
+
+    {% if current_user.id == 1 %}
+ 
+    {% endif %}
+
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/register-style.css">
+</head>
+<body>
+    <div class="register-container">
+        <form method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Register</button>
+        </form>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="static/login-style.css">
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+<div class="login-container">
+    <form method="POST">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+    </form>
+    <p>Don't have an account? <a href="{{ url_for('routes.register') }}">Register</a></p>
+</div>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - M2M Coin System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="static/faq-style.css">
+
+</head>
+<body>
+    <div class="faq-container">
+        <h1>Frequently Asked Questions</h1>
+        <div class="faq-item">
+            <h2>1. Coin Possession</h2>
+            <p>Coin ownership is divided into two types of entities:</p>
+            <ul>
+                <li>Participants: Limited to X individuals who can be senders and receivers.</li>
+                <li>Central Bank: Limited to 1 entity, acting as a sender and receiver.</li>
+            </ul>
+        </div>
+        <div class="faq-item">
+            <h2>2. Transparent Coin Ownership</h2>
+            <p>All participants are aware of each other's coin holdings.</p>
+        </div>
+        <div class="faq-item">
+            <h2>3. Total Coin Supply Visibility</h2>
+            <p>Everyone knows the total number of coins in circulation.</p>
+        </div>
+        <div class="faq-item">
+            <h2>4. Transaction Structure</h2>
+            <p>Each transaction includes the following details:</p>
+            <ul>
+                <li>Unique identifier</li>
+                <li>Timestamp</li>
+                <li>Sender</li>
+                <li>Receiver</li>
+                <li>Transaction subject</li>
+            </ul>
+        </div>
+        <div class="faq-item">
+            <h2>5. Immutable Transactions</h2>
+            <p>Transactions cannot be modified unless both the sender and receiver agree on the change.</p>
+        </div>
+        <div class="faq-item">
+            <h2>6. Transparency in Transactions</h2>
+            <p>All transactions are visible to all participants.</p>
+        </div>
+        <div class="faq-item">
+            <h2>7. Initial Coin Allocation</h2>
+            <p>Upon entering the system, participants receive 100 coins.</p>
+        </div>
+        <div class="faq-item">
+            <h2>8. Exiting the System</h2>
+            <p>When exiting the system, coins are returned to the central bank.</p>
+        </div>
+        <div class="faq-item">
+            <h2>9. Coin Redistribution</h2>
+            <p>The central bank reallocates coins to participants based on their weekly transaction activity.</p>
+        </div>
+    </div>
+        
+</body>
+</html>
+

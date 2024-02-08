@@ -33,7 +33,7 @@
 }
 
 .transaction-container input[type="text"],
-.transaction-container input[type="number"] {
+.transaction-container input[type="float"] {
   width: calc(100% - 20px);
   padding: 12px;
   margin-bottom: 20px;

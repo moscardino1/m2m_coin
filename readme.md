@@ -1,31 +1,66 @@
-python3 -m venv env 
-source env/bin/activate 
+# M2M Coin System
 
-Just run app.py
-or
-export FLASK_APP=app.py      
-export FLASK_ENV=development
-flask run
----------
+## Description
+The M2M Coin System is a Flask-based application that simulates a decentralized cryptocurrency system where participants can transact coins with each other and interact with a central bank. This README provides an overview of the application structure, key functionalities, and instructions for running the application.
+
+## Installation
+1. Clone the repository:
+  ```
+git clone <repository_url>
+  ```
+
+2. Navigate to the project directory:
+  ```
+cd <project_directory>
+  ```
+
+3. Install dependencies using pip:
+  ```
+pip install -r requirements.txt
+  ```
 
 
-To run your Flask application, follow these steps:
 
-Install the necessary packages: If you haven’t done so already, you’ll need to install Flask, Flask-SQLAlchemy, and Flask-Login. You can do this using pip, the Python package installer. Open your terminal and type:
-pip install flask flask_sqlalchemy flask_login
+## Usage
+1. Set up the database:
+- Ensure you have SQLite installed.
+- Run the following command to create the SQLite database:
+  ```
+  python app.py
+  ```
 
-Set the FLASK_APP environment variable: This tells Flask where your application is located. If your main application file is app.py, you can set the variable like this:
-export FLASK_APP=app.py
+2. Run the application:
+python app.py
 
-On Windows, use set instead of export:
 
-set FLASK_APP=app.py
+3. Access the application:
+- Open a web browser and go to `http://localhost:5000`.
 
-Run the application: You can now run your application using the flask run command:
-flask run
+## Features
+- **User Registration and Login:** Participants can register and log in to the system securely.
+- **Profile Management:** Users can update their profile information, including their name and profile picture URL.
+- **Coin Transactions:** Participants can transfer coins to other users with transaction subject descriptions.
+- **Central Bank Operations:** The central bank manages the total coin supply and redistributes coins among active participants.
+- **Transaction Logs:** All transactions are logged with timestamps, sender, receiver, amount, and subject.
+- **FAQ Page:** Provides answers to frequently asked questions about the M2M Coin System.
 
-This will start a development web server, and Flask will give you the address where you can access it (usually http://127.0.0.1:5000/).
+## Project Structure
+- **model.py:** Defines the database models for participants, the central bank, and transactions.
+- **app.py:** Configures the Flask application and initializes the database.
+- **routes.py:** Contains route definitions for different endpoints and their corresponding functionalities.
+- **templates:** Contains HTML templates for rendering the user interface.
+- **static:** Contains static files such as CSS stylesheets and images.
 
-Remember to run these commands in the directory where your app.py file is located. Also, these instructions assume that you’re using a virtual environment. If you’re not, you might need to use pip3 instead of pip, and python3 -m flask run instead of flask run.
+## Contributing
+Contributions are welcome! Please follow these steps:
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/feature-name`).
+3. Commit your changes (`git commit -am 'Add new feature'`).
+4. Push to the branch (`git push origin feature/feature-name`).
+5. Create a new Pull Request.
 
-Please note that this will run the app in development mode, which is not suitable for deploying in a production environment. If you’re planning to deploy your app, you’ll need to use a production WSGI server like Gunicorn or uWSGI. You’ll also need to set the FLASK_ENV environment variable to production and set up logging so that you can see any errors or warnings that occur. If you need help with this, please let me know! I’m here to help. 😊
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contact
+For any inquiries or suggestions, please contact [your-email@example.com](mailto:your-email@example.com).

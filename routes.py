@@ -101,22 +101,29 @@ def transact():
         # Check if receiver exists and is active
         if receiver:
             if receiver.is_active:
-                amount = int(request.form['coins'])  # Get the amount from the form data
-
-                # Check if sender is not the receiver
-                if receiver != current_user:
-                    # Check if sender has enough coins
-                    if current_user.coins >= amount:
-                        current_user.coins -= amount
-                        receiver.coins += amount
-                        transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=receiver, amount=amount, subject=request.form['subject'])
-                        db.session.add(transaction)
-                        db.session.commit()
-                        return redirect(url_for('routes.homepage'))
-                    else:
-                        error = "Insufficient coins for transaction"
+                amount_str = request.form['coins']
+                # Check if the input contains a comma instead of a period
+                if ',' in amount_str:
+                    error = "Please use a period (.) as the decimal separator for coins."
                 else:
-                    error = "You cannot transact with yourself"
+                    try:
+                        amount = float(amount_str)
+                        # Check if sender is not the receiver
+                        if receiver != current_user:
+                            # Check if sender has enough coins
+                            if current_user.coins >= amount:
+                                current_user.coins -= amount
+                                receiver.coins += amount
+                                transaction = Transaction(timestamp=datetime.utcnow(), sender=current_user, receiver=receiver, amount=amount, subject=request.form['subject'])
+                                db.session.add(transaction)
+                                db.session.commit()
+                                return redirect(url_for('routes.homepage'))
+                            else:
+                                error = "Insufficient coins for transaction"
+                        else:
+                            error = "You cannot transact with yourself"
+                    except ValueError:
+                        error = "Invalid input for coins. Please enter a valid number."
             else:
                 error = "Receiver is inactive"
         else:
@@ -137,7 +144,7 @@ def redistribute_coins():
     if num_participants == 0:
         return redirect(url_for('routes.homepage'))
 
-    redistribution_amount = current_user.coins // (num_participants - 1)
+    redistribution_amount = current_user.coins / (num_participants - 1)
 
     for participant in active_participants:
         if participant != current_user:  # Skip redistribution to the current user
@@ -162,7 +169,7 @@ def exit_system():
             num_participants = len(active_participants)
             
             if num_participants > 0:
-                redistribution_amount = current_user.coins // (num_participants - 1)
+                redistribution_amount = current_user.coins / (num_participants - 1)
                 
                 for participant in active_participants:
                     if participant != current_user:  # Skip redistribution to the current user
