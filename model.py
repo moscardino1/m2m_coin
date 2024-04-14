@@ -22,7 +22,7 @@ class Participant(UserMixin, db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(50))
     coins = db.Column(db.Float)
-    password = db.Column(db.String(100))
+    password = db.Column(db.String(255))
     profile_picture_url = db.Column(db.String(1000))
     is_active = db.Column(db.Boolean, default=True)
     insert_timestamp = db.Column(db.DateTime, default=datetime.utcnow)  # Insert timestamp

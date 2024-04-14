@@ -5,6 +5,7 @@ from datetime import datetime
 from model import db, Participant, CentralBank, Transaction  # Adjust import here
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import flash
+from werkzeug.security import generate_password_hash
 
 bp = Blueprint('routes', __name__)
 
@@ -23,8 +24,12 @@ def register():
             flash('Username already exists. Please choose a different username.', 'error')
             return redirect(url_for('routes.register'))
 
+
         # If the username is unique, proceed with registration
-        hashed_password = generate_password_hash(request.form['password'])
+        hashed_password = generate_password_hash(request.form['password'], method='pbkdf2:sha256')
+
+        # hashed_password = generate_password_hash(request.form['password'])
+        # hashed_password = request.form['password']# generate_password_hash(request.form['password'])
         new_user = Participant(name=request.form['name'], password=hashed_password, coins=100)
         db.session.add(new_user)
         db.session.commit()
