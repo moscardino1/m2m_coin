@@ -2,6 +2,7 @@
 
 ## Description
 The M2M Coin System is a Flask-based application that simulates a decentralized cryptocurrency system where participants can transact coins with each other and interact with a central bank. This README provides an overview of the application structure, key functionalities, and instructions for running the application.
+![ezgif-5-03d3195d22](https://github.com/moscardino1/m2m_coin/assets/9267948/09761531-f63b-4514-9690-5a8716cf7fc9)
 
 ## Installation
 1. Clone the repository:
